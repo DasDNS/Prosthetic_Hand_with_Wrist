@@ -1,100 +1,163 @@
-//Five servo motors for the five fingers - connected to 5 rotary switches (potentiometers)
-//A servo motor to control all five fingers at once - connected to a rotary switch (potentiometer)
-//A differential drive for the wrist - powered by 2 DC motors with a motor drive - controlled by a joystick
+#include <Arduino.h>
+#include <WiFi.h>
+#include <AsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include "LittleFS.h"
+#include <Arduino_JSON.h>
 
-//Define two DC motor pins 
-#define IN1_PIN 12; //direction of Motor A
-#define IN2_PIN 11; //direction of Motor A
-#define ENA_PIN 13; //speed of Motor A
-#define IN3_PIN 10; //direction of Motor B
-#define IN4_PIN 9; //direction of Motor B
-#define ENB_PIN 8; //speed of motor B
+// Replace with your network credentials
+const char* ssid = "DNS";
+const char* password = "12345678";
 
-int motorSpeedA = 0;
-int motorSpeedB = 0;
+// Create AsyncWebServer object on port 80
+AsyncWebServer server(80);
+// Create a WebSocket object
 
+AsyncWebSocket ws("/ws");
+// Set LED GPIO
+const int ledPin1 = 12;
+const int ledPin2 = 13;
+const int ledPin3 = 14;
+
+String message = "";
+String sliderValue1 = "0";
+String sliderValue2 = "0";
+String sliderValue3 = "0";
+
+int dutyCycle1;
+int dutyCycle2;
+int dutyCycle3;
+
+// setting PWM properties
+const int freq = 5000;
+const int ledChannel1 = 0;
+const int ledChannel2 = 1;
+const int ledChannel3 = 2;
+
+const int resolution = 8;
+
+//Json Variable to Hold Slider Values
+JSONVar sliderValues;
+
+//Get Slider Values
+String getSliderValues(){
+  sliderValues["sliderValue1"] = String(sliderValue1);
+  sliderValues["sliderValue2"] = String(sliderValue2);
+  sliderValues["sliderValue3"] = String(sliderValue3);
+
+  String jsonString = JSON.stringify(sliderValues);
+  return jsonString;
+}
+
+// Initialize LittleFS
+void initFS() {
+  if (!LittleFS.begin()) {
+    Serial.println("An error has occurred while mounting LittleFS");
+  }
+  else{
+   Serial.println("LittleFS mounted successfully");
+  }
+}
+
+// Initialize WiFi
+void initWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi ..");
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print('.');
+    delay(1000);
+  }
+  Serial.println(WiFi.localIP());
+}
+
+void notifyClients(String sliderValues) {
+  ws.textAll(sliderValues);
+}
+
+void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
+  AwsFrameInfo *info = (AwsFrameInfo*)arg;
+  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+    data[len] = 0;
+    message = (char*)data;
+    if (message.indexOf("1s") >= 0) {
+      sliderValue1 = message.substring(2);
+      dutyCycle1 = map(sliderValue1.toInt(), 0, 100, 0, 255);
+      Serial.println(dutyCycle1);
+      Serial.print(getSliderValues());
+      notifyClients(getSliderValues());
+    }
+    if (message.indexOf("2s") >= 0) {
+      sliderValue2 = message.substring(2);
+      dutyCycle2 = map(sliderValue2.toInt(), 0, 100, 0, 255);
+      Serial.println(dutyCycle2);
+      Serial.print(getSliderValues());
+      notifyClients(getSliderValues());
+    }    
+    if (message.indexOf("3s") >= 0) {
+      sliderValue3 = message.substring(2);
+      dutyCycle3 = map(sliderValue3.toInt(), 0, 100, 0, 255);
+      Serial.println(dutyCycle3);
+      Serial.print(getSliderValues());
+      notifyClients(getSliderValues());
+    }
+    if (strcmp((char*)data, "getValues") == 0) {
+      notifyClients(getSliderValues());
+    }
+  }
+}
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+  switch (type) {
+    case WS_EVT_CONNECT:
+      Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+      break;
+    case WS_EVT_DISCONNECT:
+      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      break;
+    case WS_EVT_DATA:
+      handleWebSocketMessage(arg, data, len);
+      break;
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
+      break;
+  }
+}
+
+void initWebSocket() {
+  ws.onEvent(onEvent);
+  server.addHandler(&ws);
+}
 
 void setup() {
+  Serial.begin(115200);
+  pinMode(ledPin1, OUTPUT);
+  pinMode(ledPin2, OUTPUT);
+  pinMode(ledPin3, OUTPUT);
+  initFS();
+  initWiFi();
 
-  // Set up DC motor pins
-  pinMode(IN1_PIN, OUTPUT);
-  pinMode(IN2_PIN, OUTPUT);
-  pinMode(ENA_PIN, OUTPUT);
-  pinMode(IN3_PIN, OUTPUT);
-  pinMode(IN4_PIN, OUTPUT);
-  pinMode(ENB_PIN, OUTPUT);
+  // Set up LEDC pins
+  ledcAttachChannel(ledPin1, freq, resolution, ledChannel1);
+  ledcAttachChannel(ledPin2, freq, resolution, ledChannel2);
+  ledcAttachChannel(ledPin3, freq, resolution, ledChannel3);
 
+  initWebSocket();
+  
+  // Web Server Root URL
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(LittleFS, "/index.html", "text/html");
+  });
+  
+  server.serveStatic("/", LittleFS, "/");
+
+  // Start server
+  server.begin();
 }
 
 void loop() {
+  ledcWrite(ledPin1, dutyCycle1);
+  ledcWrite(ledPin2, dutyCycle2);
+  ledcWrite(ledPin3, dutyCycle3);
 
-  joystickControl();
-  
-}
-
-void joystickControl () {
-
-  int xAxis = analogRead(4); //Read X-axis (VRx)
-  int yAxis = analogRead(5); //Read Y-axis (VRy)
-
-  //Y-axis for forward/backward control
-  if (yAxis < 470) { //joystick is pushed backward
-
-    //set Motor A backward
-    digitalWrite(IN1_PIN, HIGH);
-    digitalWrite(IN2_PIN, LOW);
-    //set Motor B backward
-    digitalWrite(IN3_PIN, HIGH);
-    digitalWrite(IN4_PIN, LOW);
-
-    motorSpeedA = map(yAxis, 470, 0, 0, 255);
-    motorSpeedB = map(yAxis, 470, 0, 0, 255);
-    //mapping motor speeds from Y-axis value (0-470) to the PWM range
-
-  } else if (yAxis > 550) { //joystick is pushed forward
-
-    //set Motor A forward
-    digitalWrite(IN3_PIN, HIGH);
-    digitalWrite(IN4_PIN, LOW);
-    //set Motor B forward
-    digitalWrite(IN3_PIN, HIGH);
-    digitalWrite(IN4_PIN, LOW);
-
-    motorSpeedA = map(yAxis, 550, 1023, 0, 255);
-    motorSpeedB = map(yAxis, 550, 1023, 0, 255);
-    //mapping motor speeds from Y- axis value (550-1023) to the PWM range
-
-  } else {
-    //is Y-axis value is between 470 and 550, stop both motors.
-    motorSpeedA = 0;
-    motorSpeedB = 0;
-
-  }
-
-  //X-axis for left/right control
-  if (xAxis < 470) { //joystick is moved left
-    //Adjust the motor speeds based on X-axis values (0-255)
-    int xMapped = map(xAxis, 470, 0, 0, 255);
-    //Subtract the mapped X-axis value from motorSpeedA and add it to motorSpeedB
-    motorSpeedA -= xMapped;
-    motorSpeedB += xMapped;
-    //ensuring motor speeds stay within the valid range (0-255)
-    if (motorSpeedA < 0) motorSpeedA = 0;
-    if (motorSpeedB > 255) motorSpeedB = 255;
-
-  } else if (xAxis > 550) { //joystick is moved right
-    //Adjust the motor speeds based on X-axis values (0-255)
-    int xMapped = map(xAxis, 550, 1023, 0, 255);
-    //Add the mapped X-axis value from motorSpeedB and subtarct it to the motorSpeedA
-    motorSpeedB += xMapped;
-    motorSpeedA -= xMapped;
-    //ensuring motor speeds stay within the valid range (0-255)
-    if (motorSpeedA > 255) motorSpeedA = 255;
-    if (motorSpeedB < 0) motorSpeedB = 0;
-
-  }
-  //set motor speeds
-  analogWrite(ENA_PIN, motorSpeedA);
-  analogWrite(ENB_PIN, motorSpeedB);
-
+  ws.cleanupClients();
 }
