@@ -2,41 +2,55 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on **Keep a Changelog**, and this project aims to follow **Semantic Versioning**.
+The format is based on **Keep a Changelog**, and this project follows **Semantic Versioning**.
 
 ---
 
-## [0.1.0] - 2026-02-01
+## [0.1.0] – 2026-02-01
 
 ### Added
-- Initial implementation of **wrist differential drive** using **two DC motors** (Motor A + Motor B).
-- **Joystick-based control**:
-  - Y-axis controls forward/backward motion with a dead zone.
-  - X-axis controls left/right turning by applying a speed difference between the two motors.
-- Motor speed mapping from joystick analog range to PWM range (**0–255**) using `map()`.
-- Motor driver interface using six pins:
-  - Direction pins: `IN1`, `IN2`, `IN3`, `IN4`
-  - Speed pins (PWM): `ENA`, `ENB`
+- Initial implementation of an **ESP32-based web-controlled PWM system**.
+- **Asynchronous Web Server** using `ESPAsyncWebServer` running on port 80.
+- **WebSocket (`/ws`) support** for real-time communication between ESP32 and web client.
+- **LittleFS filesystem support** for serving web files.
+- **JSON-based messaging** using `Arduino_JSON` for slider value exchange.
 
-### Hardware
-- Designed for use with:
-  - **ESP32-WROOM-32** (Arduino framework)
-  - **L298N** dual H-bridge motor driver
-  - 2 × DC motors (wrist differential drive)
-  - Analog joystick module (VRx/VRy)
+### Web Interface
+- `data/` folder containing:
+  - `index.html` – web UI with sliders
+  - `style.css` – UI styling
+  - `script.js` – WebSocket client logic
+- Three sliders to control PWM outputs in real time.
+- Automatic synchronization of slider values for newly connected clients.
+
+### PWM & GPIO Control
+- PWM control using **ESP32 LEDC hardware timers**.
+- Three independent PWM outputs:
+  - GPIO 12
+  - GPIO 13
+  - GPIO 14
+- PWM configuration:
+  - Frequency: 5 kHz
+  - Resolution: 8-bit
+- Slider input mapped from **0–100% → 0–255 duty cycle**.
+
+### Networking
+- Wi-Fi station mode (`WIFI_STA`) with hardcoded SSID and password.
+- Serial output showing connection status and IP address.
 
 ### Notes
-- Finger control servos (5 individual + 1 group servo) are described in comments but **not yet implemented** in this code.
-- A joystick center “dead zone” is used (approximately **470–550**) to reduce jitter.
+- Designed for **ESP32-WROOM-32** using the Arduino framework.
+- Suitable for controlling LEDs, motor drivers, or other PWM-based actuators.
+- External power is required for non-LED loads.
 
 ---
 
 ## [Unreleased]
 
 ### Planned
-- Finger servo control:
-  - 5 × finger servos controlled via 5 potentiometers.
-  - 1 × “all fingers” servo controlled via a potentiometer.
-- Add configurable constants for joystick dead zone and PWM limits.
-- Add safety limits (ramping / soft-start) to reduce current spikes.
-- Add documentation for wiring and recommended power supply setup.
+- Move Wi-Fi credentials to configuration or captive portal.
+- Add authentication for the web interface.
+- Expand WebSocket protocol with command validation.
+- Integrate motor drivers or servo controllers.
+- Improve UI feedback and status indicators.
+
