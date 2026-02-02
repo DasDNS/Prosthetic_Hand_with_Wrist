@@ -7,7 +7,7 @@
 
 //network credentials
 const char* ssid = "DNS";
-const char* password = "12345678";
+const char* password = "01234567";
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -85,10 +85,10 @@ void initWiFi() {
   }
   Serial.println(WiFi.localIP());
 }
-
+/*
 void notifyClients(String sliderValues) {
   ws.textAll(sliderValues);
-}
+}*/
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
@@ -97,48 +97,48 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
     message = (char*)data;
     if (message.indexOf("1s") >= 0) {
       sliderValue1 = message.substring(2);
-      dutyCycle1 = map(sliderValue1.toInt(), 0, 100, 0, 180);
+      dutyCycle1 = map(sliderValue1.toInt(), 0, 180, 0, 180);
       Serial.println(dutyCycle1);
       Serial.print(getSliderValues());
-      notifyClients(getSliderValues());
+      //notifyClients(getSliderValues());
     }
     if (message.indexOf("2s") >= 0) {
       sliderValue2 = message.substring(2);
-      dutyCycle2 = map(sliderValue2.toInt(), 0, 100, 0, 180);
+      dutyCycle2 = map(sliderValue2.toInt(), 0, 180, 0, 180);
       Serial.println(dutyCycle2);
       Serial.print(getSliderValues());
-      notifyClients(getSliderValues());
+      //notifyClients(getSliderValues());
     }    
     if (message.indexOf("3s") >= 0) {
       sliderValue3 = message.substring(2);
-      dutyCycle3 = map(sliderValue3.toInt(), 0, 100, 0, 180);
+      dutyCycle3 = map(sliderValue3.toInt(), 0, 180, 0, 180);
       Serial.println(dutyCycle3);
       Serial.print(getSliderValues());
-      notifyClients(getSliderValues());
+      //notifyClients(getSliderValues());
     }
     if (message.indexOf("4s") >= 0) {
       sliderValue4 = message.substring(2);
-      dutyCycle4 = map(sliderValue4.toInt(), 0, 100, 0, 180);
+      dutyCycle4 = map(sliderValue4.toInt(), 0, 180, 0, 180);
       Serial.println(dutyCycle2);
       Serial.print(getSliderValues());
-      notifyClients(getSliderValues());
+      //notifyClients(getSliderValues());
     }  
     if (message.indexOf("5s") >= 0) {
       sliderValue5 = message.substring(2);
-      dutyCycle5 = map(sliderValue5.toInt(), 0, 100, 0, 180);
+      dutyCycle5 = map(sliderValue5.toInt(), 0, 180, 0, 180);
       Serial.println(dutyCycle2);
       Serial.print(getSliderValues());
-      notifyClients(getSliderValues());
+      //notifyClients(getSliderValues());
     }
     if (message.indexOf("6s") >= 0) {
       sliderValue6 = message.substring(2);
-      dutyCycle6 = map(sliderValue6.toInt(), 0, 100, 0, 180);
+      dutyCycle6 = map(sliderValue6.toInt(), 0, 180, 0, 180);
       Serial.println(dutyCycle2);
       Serial.print(getSliderValues());
-      notifyClients(getSliderValues());
+      //notifyClients(getSliderValues());
     }      
     if (strcmp((char*)data, "getValues") == 0) {
-      notifyClients(getSliderValues());
+      //notifyClients(getSliderValues());
     }
   }
 }
