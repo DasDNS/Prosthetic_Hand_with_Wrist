@@ -6,44 +6,37 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [1.1.0] – 2026-02-02
+## [1.2.0] – 2026-02-02
 
 ### Added
-- Re-implemented **WebSocket control** for real-time servo angle updates via **six sliders**.
-- Integrated **ESP32 LEDC PWM control** for **five servo motors**:
-  - Servo motor pins: GPIO 16, 17, 18, 19, 21.
-- **Web interface** served from **LittleFS** (`index.html` + static assets).
-- **Slider control range** updated to **0–180 degrees**.
-- JSON string conversion and real-time slider updates via `getSliderValues()`.
-
-### Changed
-- **WebSocket flow** adjusted: Incoming slider updates now applied to servo control.
-- Servo duty cycle now directly mapped from **0–180 degrees**.
+- **PCA9685-based servo control** using **Adafruit PWM Servo Driver** library.
+- **I2C servo control** with the PCA9685, supporting **five servos**.
+- **WebSocket (`/ws`) slider control** via six slider channels for PWM control.
+- **Angle-to-pulse conversion** via `angleToPulse()` to map 0–180° values to servo PWM pulse width.
 
 ### Web Interface
-- Web UI served from LittleFS, with sliders to control PWM for each servo.
+- **Web UI** served from **LittleFS** (`index.html` + static assets).
+- **WebSocket control** with six channels:
+  - Sliders for 5 servos, and one synchronized slider to move all servos together.
 
-### Servo Control
-- PWM configured using **ESP32 LEDC**:
-  - Frequency: **50 Hz**
-  - Resolution: **16-bit**
-- Five servo motor channels:
-  - GPIO 16, 17, 18, 19, 21.
-- Sixth slider provides a synchronized override to control all servos at once.
+### PWM Control
+- Servo control now utilizes **Adafruit PWM Servo Driver** (PCA9685) with I2C communication.
+- **PWM frequency** set to 60Hz, with servo pulse width mapping for 0–180° range.
+- Synchronized slider to control all servos together when dutyCycle6 is non-zero.
 
 ### Networking
-- Wi-Fi station mode (`WIFI_STA`) with Serial output for connection progress and local IP address.
-- WebSocket client connect/disconnect logging over Serial.
+- **Wi-Fi station mode** (`WIFI_STA`) with Serial output showing connection status and IP address.
+- WebSocket logging for client connection and disconnection.
 
 ### Notes
-- The synchronized override uses a blocking `while (dutyCycle6 != 0)` loop, which can stall other updates. Future release will refactor this logic for non-blocking behavior.
+- The synchronized override loop for all servos (dutyCycle6) uses a blocking `while (dutyCycle6 > 0)` loop, which should be refactored for non-blocking control in future releases.
 
 ---
 
 ## [Unreleased]
 
 ### Planned
-- Replace blocking synchronized-servo loop with non-blocking logic.
-- Send a single structured WebSocket message containing all states (instead of four separate messages).
-- Add servo calibration limits and input validation.
-- Externalize Wi-Fi configuration and add basic authentication.
+- Refactor synchronized-servo loop to non-blocking logic.
+- Add per-servo limits, calibration, and inversions.
+- Improve message validation and error handling.
+- Move Wi-Fi credentials to a configuration file or captive portal setup.
