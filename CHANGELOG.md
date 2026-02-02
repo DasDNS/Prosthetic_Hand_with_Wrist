@@ -6,42 +6,50 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [1.3.0] – 2026-02-02
+## [1.4.0] – 2026-02-02
 
 ### Added
-- **WebSocket control for servo motors** with six sliders to control the angles of 5 servos.
-- **LittleFS support** to serve the web interface (`index.html`) and other static assets.
-- **PWM control** for five servos using **ESP32 LEDC**:
-  - Servos connected to GPIO pins 16, 17, 18, 19, 21.
-  - Frequency: 50Hz, Resolution: 16-bit.
+- **WebSocket-controlled motor control** for directional control of motors (up, down, left, right).
+- Added **Web interface** with direction control toggles (forward, backward, left, right) served from **LittleFS** (`index.html` and static assets).
+- **WebSocket (`/ws`) message handling** for directional control (`toggleUp`, `toggleLeft`, `toggleRight`, `toggleDown`).
 
 ### Changed
-- **WebSocket communication** to handle six slider values for each of the servo motors.
-- **Duty cycle calculations** are now converted from 0–180° to 0–65536 using the **LED PWM** mechanism.
-- The synchronization of all motors through the **sixth slider** (dutyCycle6), which applies the same duty cycle to all servos.
-
-### Web Interface
-- The web interface allows real-time control of servos using sliders, with changes reflected instantly on the motor control.
-- `getSliderValues()` sends JSON-formatted updates of the current slider values for all six channels.
+- Introduced **mutually exclusive direction control** for the dual DC motors:
+  - Up → Forward
+  - Down → Backward
+  - Left → Turn Left
+  - Right → Turn Right
+  - Stop → All motors off
+- **Motor speed** is controlled by `analogWrite()` with a max value of 255 for full speed.
 
 ### Motor Control
-- Servo angle control for 5 servos is mapped from 0–180° to the appropriate PWM signal.
-- When dutyCycle6 > 0, all servos are synchronized with the same angle.
+- Motor control logic for **dual DC motors** using `enable` and `input` pins:
+  - Motor A: `enA` (GPIO 14), `in1` (GPIO 26), `in2` (GPIO 25)
+  - Motor B: `enB` (GPIO 27), `in3` (GPIO 33), `in4` (GPIO 32)
+- Directional states updated from WebSocket messages:
+  - Up → Forward
+  - Down → Backward
+  - Left → Turn Left
+  - Right → Turn Right
+
+### Web Interface
+- Web interface allows toggling direction states of motors.
+- Direction states are displayed in real time and updated on all connected clients using WebSocket.
 
 ### Networking
-- Wi-Fi setup with static credentials (SSID and password) for connecting to the network.
-- WebSocket communication is used for control messages between the web interface and the ESP32.
+- **Wi-Fi connection** using static credentials for network access.
+- WebSocket client connection logging, with disconnect handling.
+- WebSocket broadcast messages sent to all clients when direction states change.
 
 ### Notes
-- Future versions should consider non-blocking logic for the synchronized servo movement to allow real-time updates.
-- WebSocket broadcasts send the state for each slider after any changes.
+- The motor direction control is currently blocking, preventing other state updates during movement; future releases will consider non-blocking updates.
 
 ---
 
 ## [Unreleased]
 
 ### Planned
-- Move Wi-Fi credentials to a configuration file or use a captive portal setup.
-- Refactor synchronized-servo logic for non-blocking execution.
-- Implement per-servo calibration for angular limits or fine-tuning.
-- Add basic authentication for the web interface.
+- Add per-motor speed control (variable PWM sliders).
+- Move Wi-Fi credentials to a configuration file or use a captive portal.
+- Add per-direction limits (to prevent motor conflicts).
+- Implement WebSocket message validation and improve error handling.
