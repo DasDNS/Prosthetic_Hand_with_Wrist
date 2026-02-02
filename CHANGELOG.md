@@ -6,52 +6,47 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [0.6.0] – 2026-02-02
+## [0.7.0] – 2026-02-02
 
 ### Added
-- Web-controlled **two-DC-motor differential drive** sketch for ESP32.
-- **Asynchronous Web Server** using `ESPAsyncWebServer` on port 80.
-- **WebSocket (`/ws`) command handling** to toggle directional states in real time.
-- **LittleFS filesystem support** to serve the web UI and static assets.
+- Integrated **I2C-based servo control** using `Adafruit_PWMServoDriver` (PCA9685-compatible).
+- Added `Wire` (I2C) initialization and PWM driver setup:
+  - `board1.begin()`
+  - `board1.setPWMFreq(60)`
+- Added `angleToPulse()` helper to convert **0–180°** angles into PCA9685 pulse values.
+
+### Changed
+- Migrated servo output from ESP32 GPIO/LEDC PWM to an **external PWM servo driver board** (PCA9685).
+- WebSocket slider handling now applies **direct integer angle values** (no additional mapping step).
+- Servo initialization now sets channels 0–4 to a neutral minimum pulse at startup.
 
 ### Web Interface
-- Web UI served from LittleFS:
-  - `index.html` – directional control interface
-  - Static assets served via `server.serveStatic("/", LittleFS, "/")`
-- Template variable rendering via `processor()` to show state labels (`ON` / `OFF`) for:
-  - Up / Down / Left / Right
+- Continues serving the web UI from **LittleFS** (`index.html` and static assets via `serveStatic`).
+- WebSocket (`/ws`) continues to receive **six slider channels** using prefixes `1s`..`6s`.
+- JSON aggregation via `Arduino_JSON` retained for serial debugging output (`getSliderValues()`).
 
-### Motor Control
-- Dual motor control using enable + direction pins (H-bridge style):
-  - Motor A: `enA` (GPIO 14), `in1` (GPIO 26), `in2` (GPIO 25)
-  - Motor B: `enB` (GPIO 27), `in3` (GPIO 33), `in4` (GPIO 32)
-- Direction behaviors:
-  - Forward (`toggleUp`)
-  - Reverse (`toggleDown`)
-  - Turn Left (`toggleLeft`)
-  - Turn Right (`toggleRight`)
-  - Stop (no state active)
-- Speed control via `analogWrite()`:
-  - Full speed: 255
-  - Stop: 0
+### Servo Control
+- Controls **five servo channels** on the PWM driver:
+  - Channels 0–4 mapped to slider values 1–5.
+- Sixth slider provides a **synchronized override** to drive all five channels together while its value is > 0.
+- PWM pulse mapping:
+  - Angle 0° → pulse ~125
+  - Angle 180° → pulse ~625
 
 ### Networking
-- Wi-Fi connection using predefined SSID and password.
-- Serial output for Wi-Fi connection progress and local IP address.
-- WebSocket connect/disconnect logging over Serial.
+- Wi-Fi station mode (`WIFI_STA`) with Serial output showing connection progress and IP address.
+- WebSocket client connect/disconnect logging over Serial.
 
 ### Notes
-- Designed for **ESP32 (Arduino framework)** with a dual DC motor driver (e.g., L298N / similar).
-- WebSocket broadcast currently sends each state as a separate text message.
-- Direction priority in the main loop: up → down → left → right → stop.
+- The synchronized override uses a blocking `while (dutyCycle6 > 0)` loop, which can prevent other updates; consider refactoring to non-blocking logic in a future release.
+- Designed for ESP32 + **PCA9685 servo driver** (or compatible board) connected over I2C.
 
 ---
 
 ## [Unreleased]
 
 ### Planned
-- Send a single structured WebSocket message containing all states (instead of four separate messages).
-- Make direction states mutually exclusive (auto-disable other toggles when one is enabled).
-- Add variable speed control (PWM slider).
-- Add safety timeout / auto-stop when the client disconnects.
-- Add authentication and configurable Wi-Fi setup.
+- Refactor synchronized-servo override to be non-blocking.
+- Add per-servo calibration limits (min/max pulses) and inversion options.
+- Add WebSocket message validation and optional UI state broadcasting.
+- Move Wi-Fi credentials into a config file or captive portal setup.
