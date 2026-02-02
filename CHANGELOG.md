@@ -6,50 +6,40 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [1.4.0] – 2026-02-02
+## [1.5.0] – 2026-02-02
 
 ### Added
-- **WebSocket-controlled motor control** for directional control of motors (up, down, left, right).
-- Added **Web interface** with direction control toggles (forward, backward, left, right) served from **LittleFS** (`index.html` and static assets).
-- **WebSocket (`/ws`) message handling** for directional control (`toggleUp`, `toggleLeft`, `toggleRight`, `toggleDown`).
+- **WebSocket-controlled motor direction** toggles: Up, Down, Left, Right.
+- **Web interface** with direction toggles for controlling motors, served from **LittleFS** (`index.html` + static assets).
+- **PWM control** for 5 servos using the **Adafruit PWM Servo Driver** with **angle-to-pulse conversion**.
+- **PWM control for two DC motors** with full direction control (forward, backward, left, right).
 
 ### Changed
-- Introduced **mutually exclusive direction control** for the dual DC motors:
-  - Up → Forward
-  - Down → Backward
-  - Left → Turn Left
-  - Right → Turn Right
-  - Stop → All motors off
-- **Motor speed** is controlled by `analogWrite()` with a max value of 255 for full speed.
+- Introduced **WebSocket message handling** for toggling motor directions.
+- **Motor control direction states** are now toggled via WebSocket messages (`toggleUp`, `toggleLeft`, `toggleRight`, `toggleDown`).
+- **Motor movement logic** for forward, backward, left, and right movements.
 
 ### Motor Control
-- Motor control logic for **dual DC motors** using `enable` and `input` pins:
-  - Motor A: `enA` (GPIO 14), `in1` (GPIO 26), `in2` (GPIO 25)
-  - Motor B: `enB` (GPIO 27), `in3` (GPIO 33), `in4` (GPIO 32)
-- Directional states updated from WebSocket messages:
-  - Up → Forward
-  - Down → Backward
-  - Left → Turn Left
-  - Right → Turn Right
+- **PWM control** using **Adafruit PWM Servo Driver** for 5 servos (PCA9685).
+- **Dual DC motor control** using motor driver pins and PWM control via ESP32 `digitalWrite` and `analogWrite`.
 
 ### Web Interface
-- Web interface allows toggling direction states of motors.
-- Direction states are displayed in real time and updated on all connected clients using WebSocket.
+- **Direction control** toggles for **forward**, **backward**, **left**, and **right** movements.
+- WebSocket connection updates the motor state across all clients.
 
 ### Networking
-- **Wi-Fi connection** using static credentials for network access.
-- WebSocket client connection logging, with disconnect handling.
-- WebSocket broadcast messages sent to all clients when direction states change.
+- **Wi-Fi connection** with static credentials for network access.
+- **WebSocket event logging** for client connections and motor state updates.
 
 ### Notes
-- The motor direction control is currently blocking, preventing other state updates during movement; future releases will consider non-blocking updates.
+- **Servo angle-to-pulse conversion** is based on the range of 0-180 degrees to the respective pulse width range.
+- Future releases will focus on improving message validation and adding more advanced motor control features.
 
 ---
 
 ## [Unreleased]
 
 ### Planned
-- Add per-motor speed control (variable PWM sliders).
-- Move Wi-Fi credentials to a configuration file or use a captive portal.
-- Add per-direction limits (to prevent motor conflicts).
-- Implement WebSocket message validation and improve error handling.
+- Add **per-motor speed control** via PWM sliders.
+- Improve **WebSocket message validation** and error handling.
+- Add **motor limits and safety checks** for extreme motor angles.
