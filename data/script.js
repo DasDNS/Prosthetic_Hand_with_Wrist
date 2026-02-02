@@ -12,6 +12,7 @@ function initWebSocket() {
     websocket = new WebSocket(gateway);
     websocket.onopen = onOpen;
     websocket.onclose = onClose;
+    websocket.onmessage = onMessage;
 }
 function onOpen(event) {
     console.log('Connection opened');
@@ -27,4 +28,15 @@ function updateSliderPWM(element) {
     document.getElementById("sliderValue"+sliderNumber).innerHTML = sliderValue;
     console.log(sliderValue);
     websocket.send(sliderNumber+"s"+sliderValue.toString());
+}
+function onMessage(event) {
+    console.log(event.data);
+    var myObj = JSON.parse(event.data);
+    var keys = Object.keys(myObj);
+
+    for (var i = 0; i < keys.length; i++){
+        var key = keys[i];
+        document.getElementById(key).innerHTML = myObj[key];
+        document.getElementById("slider"+ (i+1).toString()).value = myObj[key];
+    }
 }
