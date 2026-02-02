@@ -6,7 +6,7 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [1.5.0] – 2026-02-02
+## [1.6.0] – 2026-02-02
 
 ### Added
 - **WebSocket-controlled motor direction** toggles: Up, Down, Left, Right.
@@ -14,18 +14,13 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 - **PWM control** for 5 servos using the **Adafruit PWM Servo Driver** with **angle-to-pulse conversion**.
 - **PWM control for two DC motors** with full direction control (forward, backward, left, right).
 
-### Changed
-- Introduced **WebSocket message handling** for toggling motor directions.
-- **Motor control direction states** are now toggled via WebSocket messages (`toggleUp`, `toggleLeft`, `toggleRight`, `toggleDown`).
-- **Motor movement logic** for forward, backward, left, and right movements.
+### Web Interface
+- **Direction control** toggles for **forward**, **backward**, **left**, and **right** movements.
+- WebSocket connection updates the motor state across all clients.
 
 ### Motor Control
 - **PWM control** using **Adafruit PWM Servo Driver** for 5 servos (PCA9685).
 - **Dual DC motor control** using motor driver pins and PWM control via ESP32 `digitalWrite` and `analogWrite`.
-
-### Web Interface
-- **Direction control** toggles for **forward**, **backward**, **left**, and **right** movements.
-- WebSocket connection updates the motor state across all clients.
 
 ### Networking
 - **Wi-Fi connection** with static credentials for network access.
