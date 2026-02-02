@@ -32,9 +32,3 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [Unreleased]
-
-### Planned
-- Add **per-motor speed control** via PWM sliders.
-- Improve **WebSocket message validation** and error handling.
-- Add **motor limits and safety checks** for extreme motor angles.
