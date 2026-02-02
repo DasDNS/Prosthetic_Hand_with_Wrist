@@ -6,51 +6,44 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [1.0.0] – 2026-02-02
+## [1.1.0] – 2026-02-02
 
 ### Added
-- Web-controlled **two-DC-motor differential drive** sketch for ESP32.
-- **Asynchronous Web Server** using `ESPAsyncWebServer` on port 80.
-- **WebSocket (`/ws`) command handling** to toggle directional states in real time.
-- **LittleFS filesystem support** to serve the web UI and static assets.
+- Re-implemented **WebSocket control** for real-time servo angle updates via **six sliders**.
+- Integrated **ESP32 LEDC PWM control** for **five servo motors**:
+  - Servo motor pins: GPIO 16, 17, 18, 19, 21.
+- **Web interface** served from **LittleFS** (`index.html` + static assets).
+- **Slider control range** updated to **0–180 degrees**.
+- JSON string conversion and real-time slider updates via `getSliderValues()`.
+
+### Changed
+- **WebSocket flow** adjusted: Incoming slider updates now applied to servo control.
+- Servo duty cycle now directly mapped from **0–180 degrees**.
 
 ### Web Interface
-- Web UI served from LittleFS:
-  - `index.html` – directional control interface
-  - Static assets served via `server.serveStatic("/", LittleFS, "/")`
-- Template variable rendering via `processor()` to display state labels (`ON` / `OFF`) for:
-  - Up / Down / Left / Right
+- Web UI served from LittleFS, with sliders to control PWM for each servo.
 
-### Motor Control
-- Dual motor control using enable + direction pins (H-bridge style):
-  - Motor A: `enA` (GPIO 14), `in1` (GPIO 26), `in2` (GPIO 25)
-  - Motor B: `enB` (GPIO 27), `in3` (GPIO 33), `in4` (GPIO 32)
-- Direction behaviors:
-  - Forward (`toggleUp`)
-  - Reverse (`toggleDown`)
-  - Turn Left (`toggleLeft`)
-  - Turn Right (`toggleRight`)
-  - Stop (no state active)
-- Speed control via `analogWrite()`:
-  - Full speed: 255
-  - Stop: 0
+### Servo Control
+- PWM configured using **ESP32 LEDC**:
+  - Frequency: **50 Hz**
+  - Resolution: **16-bit**
+- Five servo motor channels:
+  - GPIO 16, 17, 18, 19, 21.
+- Sixth slider provides a synchronized override to control all servos at once.
 
 ### Networking
-- Wi-Fi connection using predefined SSID and password.
-- Serial output for Wi-Fi connection progress and local IP address.
+- Wi-Fi station mode (`WIFI_STA`) with Serial output for connection progress and local IP address.
 - WebSocket client connect/disconnect logging over Serial.
 
 ### Notes
-- WebSocket broadcast currently sends each state as a separate text message.
-- Direction priority in the main loop: up → down → left → right → stop.
+- The synchronized override uses a blocking `while (dutyCycle6 != 0)` loop, which can stall other updates. Future release will refactor this logic for non-blocking behavior.
 
 ---
 
 ## [Unreleased]
 
 ### Planned
+- Replace blocking synchronized-servo loop with non-blocking logic.
 - Send a single structured WebSocket message containing all states (instead of four separate messages).
-- Make direction states mutually exclusive (auto-disable other toggles when one is enabled).
-- Add variable speed control (PWM slider).
-- Add safety timeout / auto-stop when the client disconnects.
-- Add authentication and configurable Wi-Fi setup.
+- Add servo calibration limits and input validation.
+- Externalize Wi-Fi configuration and add basic authentication.
