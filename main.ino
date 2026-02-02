@@ -14,7 +14,6 @@ bool upState = 0;
 bool downState = 0;
 bool leftState = 0;
 bool rightState = 0;
-bool stopState = 0;
 
 const int enA = 14; 
 const int in1 = 26; 
@@ -130,6 +129,19 @@ void initWebSocket() {
   ws.onEvent(onEvent);
   server.addHandler(&ws);
 }
+String processor(const String& var){
+  Serial.println(var);
+  if(var == "up"){
+      return upState ? "ON" : "OFF";
+  } else if (var == "left"){
+      return leftState ? "ON" : "OFF";
+  } else if(var == "right"){
+      return rightState ? "ON" : "OFF";
+  } else if(var == "down"){
+      return downState ? "ON" : "OFF";
+  }
+    return String();
+}
 void initFS() {
   if (!LittleFS.begin()) {
     Serial.println("An error has occurred while mounting LittleFS");
@@ -190,10 +202,6 @@ void loop() {
   if (upState == 1 || downState == 1 || leftState == 1 || rightState == 1) {
     analogWrite(enA, 255);
     analogWrite(enB, 255);
-  }
-  if (upState == 0 || downState == 0 || leftState == 0 || rightState == 0) {
-    analogWrite(enA, 0);
-    analogWrite(enB, 0);
   }
   if (upState == 1) { //forward
     digitalWrite(in1, HIGH);
