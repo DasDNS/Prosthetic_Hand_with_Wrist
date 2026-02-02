@@ -6,64 +6,53 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [0.1.0] – 2026-02-01
+## [0.2.0] – 2026-02-02
 
 ### Added
-- Initial implementation of an **ESP32-based web-controlled servo system**.
+- Initial implementation of a **web-controlled differential drive system** for two DC motors using an ESP32.
 - **Asynchronous Web Server** using `ESPAsyncWebServer` running on port 80.
-- **WebSocket (`/ws`) communication** for real-time bidirectional control.
-- **LittleFS filesystem support** for serving static web content.
-- **JSON-based messaging** using `Arduino_JSON` to synchronize slider values across clients.
+- **WebSocket (`/ws`) control channel** for real-time directional commands.
+- **LittleFS filesystem support** for serving static web UI files.
+- Four directional control states with toggle commands:
+  - `toggleUp` (forward)
+  - `toggleDown` (reverse)
+  - `toggleLeft` (turn left)
+  - `toggleRight` (turn right)
 
 ### Web Interface
 - Web UI served from LittleFS:
-  - `index.html` – browser-based control interface
-  - `style.css` – UI styling
-  - `script.js` – WebSocket client logic
-- **Six independent sliders** for real-time actuator control.
-- Automatic synchronization of slider states for newly connected WebSocket clients.
+  - `index.html` – directional control interface
+  - Additional static assets served via `server.serveStatic("/", LittleFS, "/")`
+- Template variable processing via `processor()` to display button states (`ON` / `OFF`).
 
-### Servo & PWM Control
-- Servo motor control using **ESP32 LEDC hardware PWM**.
-- PWM configuration:
-  - Frequency: **50 Hz**
-  - Resolution: **16-bit**
-- Slider values mapped from **0–100 → 0–180 degrees**.
-- Duty cycle conversion implemented for standard hobby servos.
-- Support for **five individual servo outputs**:
-  - GPIO 16
-  - GPIO 17
-  - GPIO 18
-  - GPIO 19
-  - GPIO 21
-- Sixth slider enables **simultaneous movement of all servos**.
+### Motor Control
+- Two DC motors controlled via H-bridge style pins:
+  - Motor A: `enA` (GPIO 14), `in1` (GPIO 26), `in2` (GPIO 25)
+  - Motor B: `enB` (GPIO 27), `in3` (GPIO 33), `in4` (GPIO 32)
+- Directional behaviors implemented:
+  - Forward: both motors forward
+  - Reverse: both motors reverse
+  - Left: motor A reverse, motor B forward
+  - Right: motor A forward, motor B reverse
+- Speed control using `analogWrite()` with full-scale enable (255) and stop (0).
 
 ### Networking
-- Wi-Fi station mode (`WIFI_STA`) with predefined SSID and password.
-- Serial output for:
-  - Wi-Fi connection status
-  - Assigned IP address
-  - Incoming slider values and mapped angles
-
-### WebSocket Features
-- Real-time slider updates without page refresh.
-- Broadcast of slider states to all connected clients.
-- Support for `"getValues"` command to sync UI state on client connect.
+- Wi-Fi connection using hardcoded SSID and password.
+- Serial output for Wi-Fi connection progress and assigned IP address.
+- WebSocket connect/disconnect logging over Serial.
 
 ### Notes
-- Designed for **ESP32 (Arduino framework)**.
-- Intended for **servo-based applications** such as robotic hands or wrist mechanisms.
-- External power supply is recommended for driving multiple servos.
-- Servo control logic assumes standard 0–180° hobby servos.
+- Designed for **ESP32 (Arduino framework)** and a dual DC motor driver (e.g., L298N / similar).
+- Control logic prioritizes commands in order: up → down → left → right → stop.
+- WebSocket broadcast sends each state as a separate text message.
 
 ---
 
 ## [Unreleased]
 
 ### Planned
-- Improve servo motion smoothing and timing control.
-- Add configurable servo limits and calibration.
-- Move Wi-Fi credentials to a configuration file or captive portal.
-- Add authentication to the web interface.
-- Improve WebSocket message validation and error handling.
-- Refactor blocking `while` loop for slider 6 into a non-blocking control logic.
+- Send a single structured WebSocket message containing all states (instead of four separate messages).
+- Add mutually exclusive direction handling (auto-disable other toggles when one is enabled).
+- Add PWM speed control for variable motor speed.
+- Add safety timeout / auto-stop if the client disconnects.
+- Add authentication and Wi-Fi configuration options.
