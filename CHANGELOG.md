@@ -6,7 +6,7 @@ The format is based on **Keep a Changelog**, and this project follows **Semantic
 
 ---
 
-## [0.9.0] – 2026-02-02
+## [1.0.0] – 2026-02-02
 
 ### Added
 - Web-controlled **two-DC-motor differential drive** sketch for ESP32.

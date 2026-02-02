@@ -10,10 +10,6 @@ var gateway = `ws://${window.location.hostname}/ws`;
   }
   function onOpen(event) {
     console.log('Connection opened');
-    initButtonUp();
-    initButtonLeft();
-    initButtonRight();
-    initButtonDown();
   }
   function onClose(event) {
     console.log('Connection closed');
@@ -21,6 +17,10 @@ var gateway = `ws://${window.location.hostname}/ws`;
   }
   function onLoad(event) {
     initWebSocket();
+    initButtonUp();
+    initButtonLeft();
+    initButtonRight();
+    initButtonDown();
   }
   function initButtonUp() {
     document.getElementById('upButton').addEventListener('click', toggleUp);
