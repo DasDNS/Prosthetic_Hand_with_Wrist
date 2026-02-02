@@ -1,28 +1,18 @@
-// Import required libraries
+#include <Arduino.h>
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include "LittleFS.h"
+#include <Arduino_JSON.h>
 
-// Replace with your network credentials
+//network credentials
 const char* ssid = "DNS";
 const char* password = "01234567";
 
-bool upState = 0;
-bool downState = 0;
-bool leftState = 0;
-bool rightState = 0;
-
-//define motor pins
-const int enA = 14; // Enable pin for motor A
-const int in1 = 26; // Input 1 for motor A
-const int in2 = 25; // Input 2 for motor A
-const int enB = 27; // Enable pin for motor B
-const int in3 = 33; // Input 1 for motor B
-const int in4 = 32; // Input 2 for motor B
-
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
+// Create a WebSocket object
+
 AsyncWebSocket ws("/ws");
 
 String message = "";
@@ -153,8 +143,7 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   }
 }
 
-void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
-             void *arg, uint8_t *data, size_t len) {
+void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
   switch (type) {
     case WS_EVT_CONNECT:
       Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
@@ -176,56 +165,28 @@ void initWebSocket() {
   server.addHandler(&ws);
 }
 
-String processor(const String& var){
-  Serial.println(var);
-  if(var == "up"){
-      return upState ? "ON" : "OFF";
-  } else if (var == "left"){
-      return leftState ? "ON" : "OFF";
-  } else if(var == "right"){
-      return rightState ? "ON" : "OFF";
-  } else if(var == "down"){
-      return downState ? "ON" : "OFF";
-  }
-    return String();
-}
-
-void initFS() {
-  if (!LittleFS.begin()) {
-    Serial.println("An error has occurred while mounting LittleFS");
-  }
-  else{
-   Serial.println("LittleFS mounted successfully");
-  }
-}
-
-void setup(){
-  // Serial port for debugging purposes
+void setup() {
   Serial.begin(115200);
 
-  //set dc motor pins as output
-  pinMode(enA, OUTPUT);
-  pinMode(in1, OUTPUT);
-  pinMode(in2, OUTPUT);
-  pinMode(enB, OUTPUT);
-  pinMode(in3, OUTPUT);
-  pinMode(in4, OUTPUT);
+  //set servo pins as output
+  pinMode(SERVO_PIN1, OUTPUT);
+  pinMode(SERVO_PIN2, OUTPUT);
+  pinMode(SERVO_PIN3, OUTPUT);
+  pinMode(SERVO_PIN4, OUTPUT);
+  pinMode(SERVO_PIN5, OUTPUT);
 
-  // Initialize LittleFS
   initFS();
+  initWiFi();
 
-  // Connect to Wi-Fi
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi..");
-  }
-
-  // Print ESP Local IP Address
-  Serial.println(WiFi.localIP());
+  // Set up servo pins - pwm
+  ledcAttach(SERVO_PIN1, freq, resolution);
+  ledcAttach(SERVO_PIN2, freq, resolution);
+  ledcAttach(SERVO_PIN3, freq, resolution);
+  ledcAttach(SERVO_PIN4, freq, resolution);
+  ledcAttach(SERVO_PIN5, freq, resolution);
 
   initWebSocket();
-
+  
   // Web Server Root URL
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send(LittleFS, "/index.html", "text/html");
@@ -235,41 +196,31 @@ void setup(){
 
   // Start server
   server.begin();
-}
+} 
 
 void loop() {
-  ws.cleanupClients();
 
-  if (upState == 1) { //forward
-    digitalWrite(in1, HIGH);
-    digitalWrite(in2, LOW);
-    digitalWrite(in3, HIGH);
-    digitalWrite(in4, LOW);
-    analogWrite(enA, 255);
-    analogWrite(enB, 255);
-  } else if (downState == 1) { //backward
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, HIGH);
-    digitalWrite(in3, LOW);
-    digitalWrite(in4, HIGH);
-    analogWrite(enA, 255);
-    analogWrite(enB, 255);
-  } else if (leftState == 1) { //left
-    digitalWrite(in1, LOW);
-    digitalWrite(in2, HIGH);
-    digitalWrite(in3, HIGH);
-    digitalWrite(in4, LOW);
-    analogWrite(enA, 255);
-    analogWrite(enB, 255);
-  } else if (rightState == 1) { //right
-    digitalWrite(in1, HIGH);
-    digitalWrite(in2, LOW);
-    digitalWrite(in3, LOW);
-    digitalWrite(in4, HIGH);
-    analogWrite(enA, 255);
-    analogWrite(enB, 255);
-  } else{ //stop motors
-    analogWrite(enA, 0);
-    analogWrite(enB, 0);
+  // convert 0-180 degrees to 0-65536
+  duty1 = (((dutyCycle1/180.0)*2000)/20000.0*65536.0) + 1634;
+  duty2 = (((dutyCycle2/180.0)*2000)/20000.0*65536.0) + 1634;
+  duty3 = (((dutyCycle3/180.0)*2000)/20000.0*65536.0) + 1634;
+  duty4 = (((dutyCycle4/180.0)*2000)/20000.0*65536.0) + 1634;
+  duty5 = (((dutyCycle5/180.0)*2000)/20000.0*65536.0) + 1634;
+
+  while (dutyCycle6 != 0) {
+    duty6 = (((dutyCycle6/180.0)*2000)/20000.0*65536.0) + 1634;
+    ledcWrite(SERVO_PIN1, duty6);
+    ledcWrite(SERVO_PIN2, duty6);
+    ledcWrite(SERVO_PIN3, duty6);
+    ledcWrite(SERVO_PIN4, duty6);
+    ledcWrite(SERVO_PIN5, duty6);
   }
+  
+  ledcWrite(SERVO_PIN1, duty1);
+  ledcWrite(SERVO_PIN2, duty2);
+  ledcWrite(SERVO_PIN3, duty3);
+  ledcWrite(SERVO_PIN4, duty4);
+  ledcWrite(SERVO_PIN5, duty5);
+
+  ws.cleanupClients();
 }
